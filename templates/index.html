@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MPEG7 Shape Detector</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-1: #0b1f2a;
+            --bg-2: #103a44;
+            --bg-3: #f2a65a;
+            --card: rgba(255, 255, 255, 0.1);
+            --card-border: rgba(255, 255, 255, 0.28);
+            --text-main: #eef8ff;
+            --text-sub: #c8dce7;
+            --accent: #f7b267;
+            --accent-2: #5fd3bc;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            font-family: 'Space Grotesk', sans-serif;
+            color: var(--text-main);
+            background:
+                radial-gradient(circle at 8% 15%, rgba(95, 211, 188, 0.25), transparent 36%),
+                radial-gradient(circle at 90% 10%, rgba(247, 178, 103, 0.25), transparent 30%),
+                linear-gradient(140deg, var(--bg-1) 0%, var(--bg-2) 48%, #163647 100%);
+            display: grid;
+            place-items: center;
+            padding: 28px 14px;
+            overflow-x: hidden;
+        }
+
+        .shell {
+            width: min(980px, 100%);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+            backdrop-filter: blur(10px);
+            box-shadow: 0 16px 45px rgba(0, 0, 0, 0.35);
+            padding: 28px;
+            animation: popIn 0.7s ease-out;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .badge {
+            background: linear-gradient(130deg, var(--accent), #ffd7a8);
+            color: #1a2d36;
+            font-weight: 700;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            padding: 8px 14px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        h1 {
+            font-size: clamp(1.6rem, 3.2vw, 2.5rem);
+            line-height: 1.15;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: var(--text-sub);
+            font-size: 0.96rem;
+            max-width: 640px;
+        }
+
+        .content-grid {
+            margin-top: 24px;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .panel {
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            border-radius: 18px;
+            padding: 18px;
+            background: var(--card);
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #fdf3e5;
+        }
+
+        .upload-form {
+            display: grid;
+            gap: 12px;
+        }
+
+        input[type="file"] {
+            width: 100%;
+            border: 1px dashed rgba(255, 255, 255, 0.45);
+            border-radius: 12px;
+            padding: 12px;
+            color: var(--text-main);
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        button[type="submit"] {
+            width: fit-content;
+            border: none;
+            border-radius: 10px;
+            padding: 11px 20px;
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #12323c;
+            cursor: pointer;
+            background: linear-gradient(120deg, var(--accent), #ffd8a9);
+            transition: transform 0.18s ease, filter 0.18s ease;
+        }
+
+        button[type="submit"]:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.05);
+        }
+
+        .result-grid {
+            display: grid;
+            gap: 10px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .stat span:first-child {
+            color: var(--text-sub);
+        }
+
+        .stat strong {
+            font-size: 1rem;
+            color: #ffffff;
+            text-transform: capitalize;
+        }
+
+        .preview-wrap {
+            text-align: center;
+        }
+
+        .preview-wrap img {
+            width: min(320px, 100%);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+
+        .preview-caption {
+            color: var(--text-sub);
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+
+        .hint {
+            margin-top: 8px;
+            color: var(--text-sub);
+            font-size: 0.85rem;
+        }
+
+        @media (min-width: 860px) {
+            .content-grid {
+                grid-template-columns: 1.2fr 1fr;
+                align-items: start;
+            }
+        }
+
+        @keyframes popIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <main class="shell">
+        <header class="header">
+            <div>
+                <h1>MPEG7 Shape Classification</h1>
+                <p class="subtitle">Upload a silhouette image and let the model predict its shape class with confidence.</p>
+            </div>
+            <div class="badge">SHAPE AI</div>
+        </header>
+
+        <section class="content-grid">
+            <article class="panel">
+                <h2 class="panel-title">Upload Image</h2>
+                <form class="upload-form" method="POST" enctype="multipart/form-data">
+                    <input type="file" name="file" accept="image/*" required>
+                    <button type="submit">Run Prediction</button>
+                </form>
+                <p class="hint">Supported labels: apple, bell, bird, bone, bottle, tree.</p>
+            </article>
+
+            <article class="panel">
+                <h2 class="panel-title">Model Output</h2>
+
+                {% if prediction %}
+                    <div class="result-grid">
+                        <div class="stat">
+                            <span>Predicted Shape</span>
+                            <strong>{{ prediction }}</strong>
+                        </div>
+                        <div class="stat">
+                            <span>Confidence</span>
+                            <strong>{{ confidence }}</strong>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="hint">Prediction appears here after you upload an image.</p>
+                {% endif %}
+            </article>
+
+            {% if filename %}
+            <article class="panel" style="grid-column: 1 / -1;">
+                <h2 class="panel-title">Preview</h2>
+                <div class="preview-wrap">
+                    <img src="{{ url_for('static', filename='uploads/' + filename) }}" width="100">
+                    <p class="preview-caption">File: {{ filename }}</p>
+                </div>
+            </article>
+            {% endif %}
+        </section>
+    </main>
+</body>
+</html>
